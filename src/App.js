@@ -5,21 +5,20 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
-  const [localStateDate, setLocalStateDate] = useState();
   const { data } = useQuery("products", async () => {
     return await axios.get("https://fakestoreapi.com/products");
   });
 
-  useEffect(() => {
-    setLocalStateDate(data?.data);
-  }, [data]);
   const mutation = useMutation(
     (id) => axios.delete(`https://fakestoreapi.com/products/${id}`),
     {
-      onSuccess: (data) => {
-        setLocalStateDate((prev) =>
-          prev.filter((product) => product.id !== data.data.id)
+      onSuccess: (mutationData) => {
+        const newData = data;
+        const filteredData = data?.data.filter(
+          (product) => product.id !== mutationData.data.id
         );
+        newData.data = filteredData;
+        queryClient.setQueriesData("products", newData);
       },
     }
   );
@@ -29,10 +28,7 @@ function App() {
   };
   return (
     <div className="App">
-      <NewTable
-        data={localStateDate}
-        deleteSingleProduct={deleteSingleProduct}
-      />
+      <NewTable data={data?.data} deleteSingleProduct={deleteSingleProduct} />
     </div>
   );
 }
